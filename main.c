@@ -121,7 +121,7 @@ void update_status(int thread_count){
 	uint64_t percent = 100 * next / (limit - start + 1);
 	printf("\033[K");
 	printf("[");
-	for(int i=1;i<=100;i++){
+	for(int i=1;i<=99;i++){
 		printf(i < percent ? "#" : ".");
 	}	
 	printf("]\n");
@@ -189,13 +189,13 @@ int main(int argc, char** argv) {
 
 		times[i] = delta_time_milliseconds(time_start, time_end);
 		primes_found[i] = prime_count;
-		printf("\nFinalizou o processo em %.4fs\n", (double)times[i]/1000.0);
+		printf("\nFinalizou o processo em %ldms\n", times[i]);
 		printf("------------------------------------------------------\n");
 	}
 
 	printf("Resultados: \n");
 	for(int i=start_index;i<TEST_COUNT;i++){
-		printf("Rodando com %d threads: %.4fs\n", test_values[i], (double)times[i]/1000.0);
+		printf("Rodando com %2d threads: %6ldms   %ldx\n", test_values[i], times[i], times[0]/times[i]);
 	}
 	printf("\n\n");
 
