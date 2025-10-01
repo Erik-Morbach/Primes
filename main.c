@@ -115,9 +115,9 @@ uint64_t delta_time_milliseconds(struct timespec t0, struct timespec t1) {
 
 void update_status(int thread_count){
 	printf("\033[3A\033[K"); 
-	printf("Verificando primos de %llu ate %llu utilizando %d threads\n", start, limit, thread_count);
+	printf("Verificando primos de %lu ate %lu utilizando %d threads\n", start, limit, thread_count);
 	printf("\033[K");
-	printf("Contagem de primos: %llu\n", prime_count);
+	printf("Contagem de primos: %lu\n", prime_count);
 	uint64_t percent = 100 * next / (limit - start + 1);
 	printf("\033[K");
 	printf("[");
