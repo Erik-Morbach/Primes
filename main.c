@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
 
 	printf("Resultados: \n");
 	for(int i=start_index;i<TEST_COUNT;i++){
-		printf("Rodando com %2d threads: %6ldms   %ldx\n", test_values[i], times[i], times[0]/times[i]);
+		printf("Rodando com %2d threads: %6ldms   %ldx\n", test_values[i], times[i], (times[0] + times[i]/2)/times[i]);
 	}
 	printf("\n\n");
 
