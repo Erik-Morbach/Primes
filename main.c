@@ -152,8 +152,9 @@ int solve(int thread_count, pthread_t *threads){
 }
 
 int main(int argc, char** argv) {
+	if(argc != 1 && argc != 2) exit(0);
 
-	const bool benchmark = atoi(argv[1]) == -1;
+	const bool benchmark = argc == 1;
 
 	uint8_t thread_count;
 	if (benchmark) {
