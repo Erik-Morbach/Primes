@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -169,6 +170,7 @@ int main(int argc, char** argv) {
 
 	uint64_t times[TEST_COUNT];
 	uint64_t primes_found[TEST_COUNT];
+	memset(times, 0, sizeof(times));
 
 	int start_index = benchmark ? 0 : TEST_COUNT - 1;
 	for (uint8_t i = start_index; i < TEST_COUNT; ++i) {
