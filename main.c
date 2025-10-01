@@ -75,6 +75,10 @@ pthread_mutex_t count_lock = PTHREAD_MUTEX_INITIALIZER;
 void* count_primes(void* arg) {
 	while (next <= limit) {
 		pthread_mutex_lock(&next_lock);
+		if(next > limit) { // Sanity Check
+			pthread_mutex_unlock(&next_lock);
+			break;
+		}
 
 		uint64_t first = next;
 		uint64_t last  = min(next + chunk - 1, limit);
@@ -100,6 +104,18 @@ void* count_primes(void* arg) {
 
 uint64_t delta_time_milliseconds(struct timespec t0, struct timespec t1) {
 	return (t1.tv_sec * 1000 + t1.tv_nsec / 1000000) - (t0.tv_sec * 1000 + t0.tv_nsec / 1000000);
+}
+
+int solve(int thread_count, pthread_t *threads){
+	for (uint8_t j = 0; j < thread_count; ++j) {
+		if (pthread_create(&threads[j], NULL, count_primes, NULL) != 0) {
+			return -1;
+		}
+	}
+
+	for (uint8_t j = 0; j < thread_count; ++j) {
+		pthread_join(threads[j], NULL);
+	}
 }
 
 int main(int argc, char** argv) {
@@ -130,16 +146,10 @@ int main(int argc, char** argv) {
 		struct timespec time_start;
 		clock_gettime(CLOCK_MONOTONIC, &time_start);
 
-		for (uint8_t j = 0; j < test_values[i]; ++j) {
-			if (pthread_create(&threads[j], NULL, count_primes, NULL) != 0) {
-				perror("pthread_create");
-				free(threads);
-				return 1;
-			}
-		}
-
-		for (uint8_t j = 0; j < test_values[i]; ++j) {
-			pthread_join(threads[j], NULL);
+		if(solve(test_values[i], threads) != 0){
+			perror("pthread_create");
+			free(threads);
+			return 1;
 		}
 
 		struct timespec time_end;
