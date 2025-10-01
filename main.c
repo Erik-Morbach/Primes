@@ -1,8 +1,19 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-uint64_t binPow(uint64_t base, uint64_t ex, uint64_t mod);
-uint64_t mul(uint64_t base, uint64_t ex, uint64_t mod);
+uint64_t mul(uint64_t a, uint64_t b, uint64_t mod) {
+	return ((__uint128_t) a * b) % mod;
+}
+
+uint64_t binPow(uint64_t base, uint64_t ex, uint64_t mod) {
+	if (ex == 0) return 1;
+	if (ex == 1) return base;
+
+	uint64_t ans = binPow(base, ex / 2, mod);
+	ans = mul(ans, ans, mod);
+
+	return ex % 2 ? mul(ans, base, mod) : ans;
+}
 
 bool check(uint64_t a, uint64_t d,uint64_t n, int s){
 	uint64_t x = binPow(a, d, n);
