@@ -1,3 +1,6 @@
+// Trabalho feito por:
+// Gabriel Farias, Lucas Sauer, Erik Morbach
+
 #include <pthread.h>
 #include <string.h>
 #include <stdbool.h>
