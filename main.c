@@ -3,9 +3,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/sysinfo.h>
 
-#define TEST_COUNT 5
+uint8_t test_values[] = {1, 2, 4, 6, 8, 10, 12, 15, 20};
+#define TEST_COUNT (sizeof(test_values)/sizeof(uint8_t))
 
 #define min(a, b) ((a) <= (b) ? (a) : (b))
 
@@ -66,11 +68,14 @@ uint64_t start = 1;
 uint64_t limit = 5000000;
 uint64_t chunk = 5000;
 
+uint8_t threads_finished = 0;
+
 uint64_t next;
 uint64_t prime_count;
 
 pthread_mutex_t next_lock  = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t count_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t thread_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void* count_primes(void* arg) {
 	while (next <= limit) {
@@ -98,7 +103,9 @@ void* count_primes(void* arg) {
 
 		pthread_mutex_unlock(&count_lock);
 	}
-
+	pthread_mutex_lock(&thread_lock);
+	threads_finished++;
+	pthread_mutex_unlock(&thread_lock);
 	return NULL;
 }
 
@@ -106,24 +113,47 @@ uint64_t delta_time_milliseconds(struct timespec t0, struct timespec t1) {
 	return (t1.tv_sec * 1000 + t1.tv_nsec / 1000000) - (t0.tv_sec * 1000 + t0.tv_nsec / 1000000);
 }
 
+void update_status(int thread_count){
+	printf("\033[3A\033[K"); 
+	printf("Verificando primos de %llu ate %llu utilizando %d threads\n", start, limit, thread_count);
+	printf("\033[K");
+	printf("Contagem de primos: %llu\n", prime_count);
+	uint64_t percent = 100 * next / (limit - start + 1);
+	printf("\033[K");
+	printf("[");
+	for(int i=1;i<=100;i++){
+		printf(i < percent ? "#" : ".");
+	}	
+	printf("]\n");
+
+}
+
 int solve(int thread_count, pthread_t *threads){
+	threads_finished = 0;
+	next = 1;
+	prime_count = 0;
 	for (uint8_t j = 0; j < thread_count; ++j) {
 		if (pthread_create(&threads[j], NULL, count_primes, NULL) != 0) {
 			return -1;
 		}
 	}
+	printf("\n");
+	printf("\n");
+	printf("\n");
+	while(threads_finished != thread_count){
+		usleep(1000);
+		update_status(thread_count);
+	}
 
 	for (uint8_t j = 0; j < thread_count; ++j) {
 		pthread_join(threads[j], NULL);
 	}
+	return 0;
 }
 
 int main(int argc, char** argv) {
-	if (argc != 1 && argc != 2) return 1;
 
-	uint8_t test_values[TEST_COUNT] = {1, 2, 4, 6, 8};
-
-	const bool benchmark = argc == 1;
+	const bool benchmark = atoi(argv[1]) == -1;
 
 	uint8_t thread_count;
 	if (benchmark) {
@@ -139,7 +169,8 @@ int main(int argc, char** argv) {
 	uint64_t times[TEST_COUNT];
 	uint64_t primes_found[TEST_COUNT];
 
-	for (uint8_t i = benchmark ? 0 : TEST_COUNT - 1; i < TEST_COUNT; ++i) {
+	int start_index = benchmark ? 0 : TEST_COUNT - 1;
+	for (uint8_t i = start_index; i < TEST_COUNT; ++i) {
 		next = start;
 		prime_count = 0;
 
@@ -157,7 +188,15 @@ int main(int argc, char** argv) {
 
 		times[i] = delta_time_milliseconds(time_start, time_end);
 		primes_found[i] = prime_count;
+		printf("\nFinalizou o processo em %.4fs\n", (double)times[i]/1000.0);
+		printf("------------------------------------------------------\n");
 	}
+
+	printf("Resultados: \n");
+	for(int i=start_index;i<TEST_COUNT;i++){
+		printf("Rodando com %d threads: %.4fs\n", test_values[i], (double)times[i]/1000.0);
+	}
+	printf("\n\n");
 
 	free(threads);
 
