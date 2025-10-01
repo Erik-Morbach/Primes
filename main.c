@@ -1,6 +1,11 @@
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/sysinfo.h>
+
+#define TEST_COUNT 5
 
 #define min(a, b) ((a) <= (b) ? (a) : (b))
 
@@ -91,4 +96,60 @@ void* count_primes(void* arg) {
 	}
 
 	return NULL;
+}
+
+uint64_t delta_time_milliseconds(struct timespec t0, struct timespec t1) {
+	return (t1.tv_sec * 1000 + t1.tv_nsec / 1000000) - (t0.tv_sec * 1000 + t0.tv_nsec / 1000000);
+}
+
+int main(int argc, char** argv) {
+	if (argc != 1 && argc != 2) return 1;
+
+	uint8_t test_values[TEST_COUNT] = {1, 2, 4, 6, 8};
+
+	const bool benchmark = argc == 1;
+
+	uint8_t thread_count;
+	if (benchmark) {
+		thread_count = test_values[TEST_COUNT - 1];
+	} else {
+		const int x = atoi(argv[1]);
+		thread_count = x > 0 && x <= UINT8_MAX ? x : get_nprocs();
+		test_values[TEST_COUNT - 1] = thread_count;
+	}
+
+	pthread_t* threads = (pthread_t*) malloc(thread_count * sizeof(pthread_t));
+
+	uint64_t times[TEST_COUNT];
+	uint64_t primes_found[TEST_COUNT];
+
+	for (uint8_t i = benchmark ? 0 : TEST_COUNT - 1; i < TEST_COUNT; ++i) {
+		next = start;
+		prime_count = 0;
+
+		struct timespec time_start;
+		clock_gettime(CLOCK_MONOTONIC, &time_start);
+
+		for (uint8_t j = 0; j < test_values[i]; ++j) {
+			if (pthread_create(&threads[j], NULL, count_primes, NULL) != 0) {
+				perror("pthread_create");
+				free(threads);
+				return 1;
+			}
+		}
+
+		for (uint8_t j = 0; j < test_values[i]; ++j) {
+			pthread_join(threads[j], NULL);
+		}
+
+		struct timespec time_end;
+		clock_gettime(CLOCK_MONOTONIC, &time_end);
+
+		times[i] = delta_time_milliseconds(time_start, time_end);
+		primes_found[i] = prime_count;
+	}
+
+	free(threads);
+
+	return 0;
 }
